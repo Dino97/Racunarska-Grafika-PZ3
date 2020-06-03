@@ -82,13 +82,17 @@ namespace PZ3
             Material quadMaterial = new DiffuseMaterial(new ImageBrush(mapImg));
             GeometryModel3D quad = new GeometryModel3D(quadMesh, quadMaterial);
 
-            // Create directional light
-            DirectionalLight light = new DirectionalLight();
-            light.Color = Colors.White;
-            light.Direction = new Vector3D(0, -1, 0);
+            // Create directional & ambient light
+            DirectionalLight dirLight = new DirectionalLight();
+            dirLight.Color = Colors.White;
+            dirLight.Direction = new Vector3D(0, -1, 0);
+
+            AmbientLight ambientLight = new AmbientLight();
+            ambientLight.Color = Color.FromRgb(62, 73, 89);
 
             modelGroup = new Model3DGroup();
-            modelGroup.Children.Add(light);
+            modelGroup.Children.Add(dirLight);
+            modelGroup.Children.Add(ambientLight);
             modelGroup.Children.Add(quad);
 
             ModelVisual3D modelVisual = new ModelVisual3D();
@@ -131,11 +135,11 @@ namespace PZ3
 
                 Material material;
                 if (node.ConnectionCount <= 3)
-                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 150, 150)));
+                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 130, 130)));
                 else if (node.ConnectionCount <= 5)
-                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 70, 70)));
+                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 80, 80)));
                 else
-                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 0, 0)));
+                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(240, 0, 0)));
 
                 GeometryModel3D cube = new GeometryModel3D(cubeMesh, material);
                 nodeModels.Add(cube, node);
@@ -213,10 +217,7 @@ namespace PZ3
             // Pan
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                Quaternion r = new Quaternion(new Vector3D(1, 0, 0), 90);
-                Matrix3D m = Matrix3D.Identity;
-                m.Rotate(r);
-                Vector3D right = Vector3D.CrossProduct(camera.LookDirection, Vector3D.Multiply(camera.LookDirection, m));
+                Vector3D right = Vector3D.CrossProduct(camera.LookDirection, camera.UpDirection);
                 Vector delta = e.GetPosition(this) - lastMousePos;
 
                 Point3D camPos = camera.Position;
@@ -238,11 +239,14 @@ namespace PZ3
                 transformGroup.Children.Add(rotation2);
                 transformGroup.Children.Add(rotation1);
 
-                Matrix3D transform = Matrix3D.Identity;
-                //transform.rot
-                //rotation1.Transform()
-
                 modelGroup.Transform = transformGroup;
+            }
+
+            if (tooltip != null && (e.LeftButton == MouseButtonState.Pressed || 
+                                    e.RightButton == MouseButtonState.Pressed || 
+                                    e.MiddleButton == MouseButtonState.Pressed))
+            {
+                tooltip.IsOpen = false;
             }
 
             lastMousePos = e.GetPosition(this);
@@ -310,7 +314,7 @@ namespace PZ3
                     oldMaterial1 = pn1Model.Material;
                     oldMaterial2 = pn2Model.Material;
 
-                    Material mat = new DiffuseMaterial(Brushes.Purple);
+                    Material mat = new DiffuseMaterial(Brushes.GreenYellow);
                     pn1Model.Material = mat;
                     pn2Model.Material = mat;
 
