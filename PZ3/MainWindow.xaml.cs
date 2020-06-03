@@ -108,13 +108,32 @@ namespace PZ3
                 double xPos = MathUtility.Lerp(-mapSizeX / 2, mapSizeX / 2, xNormalized);
                 double zPos = MathUtility.Lerp(-mapSizeZ / 2, mapSizeZ / 2, yNormalized);
 
-                Geometry3D cubeMesh = MeshFactory.Cube(new Point3D(xPos, CUBE_SIZE / 2, -zPos), new Vector3D(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE));
+                double cubeHeight = CUBE_SIZE / 2 + 0.1;
+                bool intersectsWithNode;
+                Geometry3D cubeMesh;
+
+                // Check AABB intersections
+                do
+                {
+                    cubeMesh = MeshFactory.Cube(new Point3D(xPos, cubeHeight, -zPos), new Vector3D(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE));
+                    intersectsWithNode = false;
+
+                    foreach (Model3D cubeModel in modelGroup.Children)
+                    {
+                        if (cubeMesh.Bounds.IntersectsWith(cubeModel.Bounds))
+                        {
+                            cubeHeight += CUBE_SIZE + 0.1;
+                            intersectsWithNode = true;
+                            break;
+                        }
+                    }
+                } while (intersectsWithNode);
 
                 Material material;
                 if (node.ConnectionCount <= 3)
-                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 85, 85)));
+                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 150, 150)));
                 else if (node.ConnectionCount <= 5)
-                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 170, 170)));
+                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 70, 70)));
                 else
                     material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 0, 0)));
 
@@ -244,10 +263,13 @@ namespace PZ3
             if (tooltip != null)
                 tooltip.IsOpen = false;
 
-            Point mousePos = e.GetPosition(viewport);
-            PointHitTestParameters htParams = new PointHitTestParameters(mousePos);
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                Point mousePos = e.GetPosition(viewport);
+                PointHitTestParameters htParams = new PointHitTestParameters(mousePos);
 
-            VisualTreeHelper.HitTest(viewport, null, HitTestCallback, htParams);
+                VisualTreeHelper.HitTest(viewport, null, HitTestCallback, htParams);
+            }
         }
 
         private HitTestResultBehavior HitTestCallback(HitTestResult result)
@@ -256,17 +278,14 @@ namespace PZ3
 
             if (htResult != null)
             {
-                foreach (Model3D model in nodeModels.Keys)
+                if (nodeModels.ContainsKey(htResult.ModelHit))
                 {
-                    if (model == htResult.ModelHit)
-                    {
-                        tooltip = new ToolTip();
-                        tooltip.Content = nodeModels[model].ToolTip;
-                        tooltip.IsOpen = true;
-                        tooltip.Placement = System.Windows.Controls.Primitives.PlacementMode.Mouse;
+                    tooltip = new ToolTip();
+                    tooltip.Content = nodeModels[htResult.ModelHit].ToolTip;
+                    tooltip.IsOpen = true;
+                    tooltip.Placement = System.Windows.Controls.Primitives.PlacementMode.Mouse;
 
-                        return HitTestResultBehavior.Stop;
-                    }
+                    return HitTestResultBehavior.Stop;
                 }
 
                 if (selectedModel1 != null)
@@ -276,29 +295,30 @@ namespace PZ3
                     selectedModel2.Material = oldMaterial2;
                 }
 
-                foreach (Model3D model in lineModels.Keys)
+                if (lineModels.ContainsKey(htResult.ModelHit))
                 {
-                    if (model == htResult.ModelHit)
-                    {
-                        PowerLine line = lineModels[model];
-                        PowerNode pn1 = nodeMap.IdToNodeDictionary[line.FirstEnd];
-                        PowerNode pn2 = nodeMap.IdToNodeDictionary[line.SecondEnd];
+                    PowerLine line = lineModels[htResult.ModelHit];
+                    PowerNode pn1 = nodeMap.IdToNodeDictionary[line.FirstEnd];
+                    PowerNode pn2 = nodeMap.IdToNodeDictionary[line.SecondEnd];
 
-                        GeometryModel3D pn1Model = nodeModels.FirstOrDefault(n => n.Value == pn1).Key as GeometryModel3D;
-                        GeometryModel3D pn2Model = nodeModels.FirstOrDefault(n => n.Value == pn2).Key as GeometryModel3D;
+                    GeometryModel3D pn1Model = nodeModels.FirstOrDefault(n => n.Value == pn1).Key as GeometryModel3D;
+                    GeometryModel3D pn2Model = nodeModels.FirstOrDefault(n => n.Value == pn2).Key as GeometryModel3D;
 
-                        // Save old materials to restore on deselect
-                        selectedModel1 = pn1Model;
-                        selectedModel2 = pn2Model;
-                        oldMaterial1 = pn1Model.Material;
-                        oldMaterial2 = pn2Model.Material;
+                    // Save old materials to restore on deselect
+                    selectedModel1 = pn1Model;
+                    selectedModel2 = pn2Model;
+                    oldMaterial1 = pn1Model.Material;
+                    oldMaterial2 = pn2Model.Material;
 
-                        Material mat = new DiffuseMaterial(Brushes.Purple);
-                        pn1Model.Material = mat;
-                        pn2Model.Material = mat;
+                    Material mat = new DiffuseMaterial(Brushes.Purple);
+                    pn1Model.Material = mat;
+                    pn2Model.Material = mat;
 
-                        break;
-                    }
+                    // Show tooltip
+                    tooltip = new ToolTip();
+                    tooltip.Content = lineModels[htResult.ModelHit].ToolTip;
+                    tooltip.IsOpen = true;
+                    tooltip.Placement = System.Windows.Controls.Primitives.PlacementMode.Mouse;
                 }
             }
 

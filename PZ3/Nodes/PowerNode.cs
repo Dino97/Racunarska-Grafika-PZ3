@@ -11,7 +11,7 @@ namespace PZ3
         public double Y { get; set; }
         public int ConnectionCount { get; set; }
 
-        public virtual string ToolTip => GetType().Name.ToString() + Environment.NewLine + Id + " " + Name;
+        public virtual string ToolTip => GetType().Name.ToString() + Environment.NewLine + Id + " " + Name + Environment.NewLine + "Connections: " + ConnectionCount;
         public virtual SolidColorBrush Color => Brushes.Red;
     }
 }
