@@ -25,6 +25,11 @@ namespace PZ3
         private double rotationY;
         private Point lastMousePos;
 
+        private Material lightRedMat;
+        private Material redMat;
+        private Material brightRedMat;
+        private Material lineMat;
+
         private ToolTip tooltip;
         private GeometryModel3D selectedModel1;
         private GeometryModel3D selectedModel2;
@@ -100,6 +105,11 @@ namespace PZ3
 
             viewport.Children.Add(modelVisual);
             Content = viewport;
+
+            lightRedMat     = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 130, 130)));
+            redMat          = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 80, 80)));
+            brightRedMat    = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(240, 0, 0)));
+            lineMat         = new DiffuseMaterial(Brushes.Black);
         }
 
         private void DrawNodes()
@@ -135,11 +145,11 @@ namespace PZ3
 
                 Material material;
                 if (node.ConnectionCount <= 3)
-                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 130, 130)));
+                    material = lightRedMat;
                 else if (node.ConnectionCount <= 5)
-                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(255, 80, 80)));
+                    material = redMat;
                 else
-                    material = new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(240, 0, 0)));
+                    material = brightRedMat;
 
                 GeometryModel3D cube = new GeometryModel3D(cubeMesh, material);
                 nodeModels.Add(cube, node);
@@ -183,8 +193,7 @@ namespace PZ3
                     lineMesh.Positions = vertices;
                     lineMesh.TriangleIndices = indices;
 
-                    Material material = new DiffuseMaterial(Brushes.Black);
-                    GeometryModel3D line = new GeometryModel3D(lineMesh, material);
+                    GeometryModel3D line = new GeometryModel3D(lineMesh, lineMat);
                     lineModels.Add(line, lineNode);
 
                     modelGroup.Children.Add(line);
